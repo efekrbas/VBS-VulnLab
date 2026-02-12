@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VBS Güvenlik Kontrol</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="header">
+            <h1>VBS GÜVENLİK KONTROL</h1>
+            <div class="header-icon">➜</div>
+        </div>
+
+        <div class="content">
+            <p class="warning-text">Aşağıdaki öğrenciye ait soruları cevaplayarak sisteme giriş yapınız.</p>
+
+            <form id="verification-form">
+                <div class="form-row">
+                    <label for="city-select"><span class="required">*</span> Öğrencinin nüfusa kayıtlı olduğu il hangisidir?</label>
+                    <select id="city-select">
+                        <option value="">Seçiniz...</option>
+                        <option value="ADANA">ADANA</option>
+                        <option value="ANKARA" selected>ANKARA</option>
+                        <option value="ISTANBUL">İSTANBUL</option>
+                        <option value="IZMIR">İZMİR</option>
+                        <option value="BURSA">BURSA</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="dynamic-input" id="dynamic-label"><span class="required">*</span> Öğrencinin nüfus cüzdanı cilt numarası nedir?</label>
+                    <input type="text" id="dynamic-input">
+                </div>
+
+                <div class="form-row image-section">
+                    <label><span class="required">*</span> Aşağıdaki resimlerden hangisi öğrenciye aittir?</label>
+                    <div class="image-grid" id="image-grid">
+                        <!-- Images will be injected here by JS -->
+                    </div>
+                </div>
+
+                <button type="button" class="submit-btn">Tamam</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
