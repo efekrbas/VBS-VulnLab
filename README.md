@@ -6,8 +6,6 @@ MEB E-Okul sistemindeki eski "VBS Güvenlik Kontrol" doğrulama sayfasının fro
 
 🔗 **[Canlı Demo](https://efekrbas.github.io/eokul-eski-dogrulama-sayfasi/)**
 
-> GitHub Pages veya başka bir hosting servisi üzerinden yayınladıktan sonra yukarıdaki linki güncelleyin.
-
 ## 🖥️ Ekran Görüntüsü
 
 Sayfa, orijinal e-Okul doğrulama ekranının tasarımını birebir taklit eder:
