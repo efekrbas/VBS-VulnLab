@@ -8,6 +8,8 @@ MEB E-Okul sistemindeki eski "VBS Güvenlik Kontrol" doğrulama sayfasının fro
 
 ## 🖥️ Ekran Görüntüsü
 
+<img width="1918" height="974" alt="Ekran görüntüsü 2026-02-12 054903" src="https://github.com/user-attachments/assets/c89d5715-9c63-4825-b55a-062bc2ff2f06" />
+
 Sayfa, orijinal eski e-Okul doğrulama ekranının tasarımını birebir taklit eder:
 - Koyu başlık çubuğu ("VBS GÜVENLİK KONTROL")
 - Turuncu uyarı metni
