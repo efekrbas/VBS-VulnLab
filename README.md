@@ -18,6 +18,17 @@ Sayfa, orijinal eski e-Okul doğrulama ekranının tasarımını birebir taklit 
 - 5 adet öğrenci görseli seçimi
 - "Tamam" butonu
 
+## 📱 Responsive Tasarım
+
+Sayfa tüm cihaz boyutlarına uyumludur:
+
+| Cihaz | Breakpoint | Özellikler |
+|-------|-----------|------------|
+| 🖥️ Masaüstü | > 768px | Orijinal düzen, yatay form satırları |
+| 📱 Tablet | ≤ 768px | Dikey form, tam genişlik inputlar, esnek resim boyutları |
+| 📱 Mobil | ≤ 480px | Kompakt spacing, tam genişlik buton |
+| 📱 Küçük Ekran | ≤ 360px | Minimum boşluklar, küçültülmüş fontlar |
+
 ## 🚀 Kullanım
 
 1. `index.html` dosyasını tarayıcınızda açın.
@@ -31,7 +42,7 @@ Sayfa, orijinal eski e-Okul doğrulama ekranının tasarımını birebir taklit 
 ```
 eokul-eski-dogrulama-sayfasi/
 ├── index.html      # Ana sayfa
-├── style.css       # Stil dosyası
+├── style.css       # Stil dosyası (responsive media queries)
 ├── script.js       # Dinamik soru & görsel mantığı
 └── README.md       # Bu dosya
 ```
@@ -61,7 +72,7 @@ Her yenilemede aşağıdaki sorulardan biri rastgele seçilir:
 ## 🛠️ Teknolojiler
 
 - **HTML5** — Sayfa yapısı
-- **CSS3** — Orijinal tasarıma uygun stil
+- **CSS3** — Orijinal tasarıma uygun stil + responsive media queries
 - **JavaScript (Canvas API)** — Dinamik görsel oluşturma ve soru rastgeleleştirme
 
 ## ⚠️ Not

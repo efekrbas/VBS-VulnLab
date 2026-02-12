@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Arial', sans-serif;
     background-color: #f0f0f0;
@@ -5,10 +11,13 @@ body {
     justify-content: center;
     padding-top: 50px;
     margin: 0;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .main-container {
-    width: 650px;
+    width: 100%;
+    max-width: 650px;
     background-color: white;
     border: 1px solid #ccc;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -74,6 +83,7 @@ input[type="text"] {
     border: 1px solid #3498db;
     border-radius: 3px;
     width: 180px;
+    min-width: 0;
     font-size: 14px;
 }
 
@@ -86,13 +96,14 @@ input[type="text"] {
     width: 100%;
     margin-bottom: 10px;
     color: #663399;
-    /* Purple color from screenshot */
     font-weight: bold;
 }
 
 .image-grid {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
     margin-top: 10px;
 }
 
@@ -131,4 +142,119 @@ input[type="text"] {
 
 .submit-btn:hover {
     background-color: #e67e22;
+}
+
+/* ===================== TABLET (max-width: 768px) ===================== */
+@media (max-width: 768px) {
+    body {
+        padding-top: 30px;
+    }
+
+    .header h1 {
+        font-size: 16px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .form-row label {
+        width: 100%;
+    }
+
+    select,
+    input[type="text"] {
+        width: 100%;
+    }
+
+    .image-grid {
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    .image-option {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .image-option img,
+    .image-option canvas {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+}
+
+/* ===================== MOBILE (max-width: 480px) ===================== */
+@media (max-width: 480px) {
+    body {
+        padding-top: 15px;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .header {
+        padding: 8px 12px;
+    }
+
+    .header h1 {
+        font-size: 14px;
+    }
+
+    .header-icon {
+        font-size: 16px;
+        padding: 2px 6px;
+    }
+
+    .content {
+        padding: 15px 12px;
+    }
+
+    .warning-text {
+        font-size: 13px;
+        margin-bottom: 18px;
+    }
+
+    .form-row label {
+        font-size: 13px;
+    }
+
+    .image-grid {
+        gap: 4px;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 12px;
+    }
+}
+
+/* ===================== VERY SMALL (max-width: 360px) ===================== */
+@media (max-width: 360px) {
+    .header h1 {
+        font-size: 12px;
+    }
+
+    .content {
+        padding: 10px 8px;
+    }
+
+    .warning-text {
+        font-size: 12px;
+    }
+
+    .form-row label {
+        font-size: 12px;
+    }
+
+    select,
+    input[type="text"] {
+        font-size: 13px;
+    }
+
+    .image-grid {
+        gap: 2px;
+    }
 }
