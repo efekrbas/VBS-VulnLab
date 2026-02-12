@@ -8,7 +8,7 @@ MEB E-Okul sistemindeki eski "VBS Güvenlik Kontrol" doğrulama sayfasının fro
 
 ## 🖥️ Ekran Görüntüsü
 
-Sayfa, orijinal e-Okul doğrulama ekranının tasarımını birebir taklit eder:
+Sayfa, orijinal eski e-Okul doğrulama ekranının tasarımını birebir taklit eder:
 - Koyu başlık çubuğu ("VBS GÜVENLİK KONTROL")
 - Turuncu uyarı metni
 - İl seçimi dropdown'u
