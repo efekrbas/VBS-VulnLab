@@ -1,6 +1,6 @@
-# e-Okul VBS Güvenlik Kontrol Sayfası (Replika)
+# e-Okul Eski VBS Güvenlik Kontrol Sayfası (Replika)
 
-MEB e-Okul sistemindeki eski "VBS Güvenlik Kontrol" doğrulama sayfasının frontend replikasıdır. Sayfa her yenilendiğinde (F5) doğrulama soruları ve görseller değişir.
+MEB E-Okul sistemindeki eski "VBS Güvenlik Kontrol" doğrulama sayfasının frontend replikasıdır. Sayfa her yenilendiğinde (F5) doğrulama soruları ve görseller değişir.
 
 ## 🌐 Live Demo
 
