@@ -77,4 +77,4 @@ Her yenilemede aşağıdaki sorulardan biri rastgele seçilir:
 
 ## ⚠️ Not
 
-Bu proje tamamen eğitim/demo amaçlıdır. Herhangi bir backend bağlantısı veya gerçek doğrulama işlemi içermez.
+Bu proje herhangi bir backend bağlantısı veya gerçek doğrulama işlemi içermez.
