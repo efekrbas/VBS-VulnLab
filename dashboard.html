@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-Okul Karne Bilgileri</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #e8ecf1;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 30px 10px;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 750px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+
+        .dash-header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #fff;
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dash-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .dash-header .badge {
+            background: #e67e22;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .student-info {
+            background: #f8f9fa;
+            padding: 20px 25px;
+            border-bottom: 2px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .student-info .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .student-info .info-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .student-info .info-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .section-title {
+            padding: 18px 25px 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+        }
+
+        .grades-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .grades-table thead {
+            background: #f0f3f5;
+        }
+
+        .grades-table th {
+            padding: 10px 15px;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .grades-table td {
+            padding: 12px 15px;
+            font-size: 14px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .grades-table tr:hover {
+            background: #fafbfc;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .grade-high { background: #d4edda; color: #155724; }
+        .grade-mid { background: #fff3cd; color: #856404; }
+        .grade-low { background: #f8d7da; color: #721c24; }
+
+        .average-row {
+            background: #2c3e50 !important;
+        }
+
+        .average-row td {
+            color: #fff !important;
+            font-weight: 700;
+            border-bottom: none;
+        }
+
+        .footer-warning {
+            padding: 15px 25px;
+            background: #fff3cd;
+            color: #856404;
+            font-size: 12px;
+            text-align: center;
+            border-top: 1px solid #ffc107;
+        }
+
+        .loading {
+            padding: 60px;
+            text-align: center;
+            color: #888;
+            font-size: 16px;
+        }
+
+        .error-box {
+            padding: 40px;
+            text-align: center;
+            color: #721c24;
+            background: #f8d7da;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .vulnerability-demo {
+            padding: 15px 25px;
+            background: #e8f4fd;
+            border-top: 2px solid #2196F3;
+            font-size: 12px;
+            color: #0d47a1;
+        }
+
+        .vulnerability-demo code {
+            background: #bbdefb;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+        }
+
+        @media (max-width: 500px) {
+            .student-info { grid-template-columns: 1fr; }
+            .dash-header h1 { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div class="dash-header">
+            <h1>e-Okul Karne Bilgileri</h1>
+            <span class="badge">2024-2025</span>
+        </div>
+
+        <div id="content">
+            <div class="loading">Yükleniyor...</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            const contentDiv = document.getElementById("content");
+            const params = new URLSearchParams(window.location.search);
+            const studentId = params.get("studentId");
+
+            if (!studentId) {
+                contentDiv.innerHTML = '<div class="error-box">Öğrenci ID bulunamadı!</div>';
+                return;
+            }
+
+            try {
+                // Bu kısım zafiyetli bırakılmıştır – IDOR (Insecure Direct Object Reference)
+                // URL'deki studentId parametresi doğrudan API'ye gönderiliyor.
+                // Herhangi bir yetkilendirme kontrolü yapılmıyor.
+                // Saldırgan URL'deki studentId değerini değiştirerek
+                // başka öğrencilerin karne bilgilerine erişebilir.
+                const response = await fetch(`/api/student?id=${studentId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    contentDiv.innerHTML = `<div class="error-box">${data.message}</div>`;
+                    return;
+                }
+
+                const student = data.student;
+                const grades = data.grades;
+
+                // Ortalama hesapla
+                const avg = (grades.reduce((sum, g) => sum + g.grade, 0) / grades.length).toFixed(1);
+
+                function gradeClass(g) {
+                    if (g >= 85) return "grade-high";
+                    if (g >= 60) return "grade-mid";
+                    return "grade-low";
+                }
+
+                contentDiv.innerHTML = `
+                    <div class="student-info">
+                        <div class="info-item">
+                            <span class="info-label">Öğrenci Adı</span>
+                            <span class="info-value">${student.name}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Okul</span>
+                            <span class="info-value">${student.school}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Sınıf</span>
+                            <span class="info-value">${student.class}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Öğrenci No</span>
+                            <span class="info-value">${student.id}</span>
+                        </div>
+                    </div>
+
+                    <h2 class="section-title">Ders Notları</h2>
+
+                    <table class="grades-table">
+                        <thead>
+                            <tr>
+                                <th>Ders</th>
+                                <th>1. Yazılı</th>
+                                <th>2. Yazılı</th>
+                                <th>Ortalama</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${grades.map(g => `
+                                <tr>
+                                    <td>${g.subject}</td>
+                                    <td>${g.exam1}</td>
+                                    <td>${g.exam2}</td>
+                                    <td><span class="grade-badge ${gradeClass(g.grade)}">${g.grade}</span></td>
+                                </tr>
+                            `).join("")}
+                            <tr class="average-row">
+                                <td colspan="3">Genel Ortalama</td>
+                                <td><span class="grade-badge grade-high">${avg}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="vulnerability-demo">
+                        <strong>⚠ IDOR Zafiyeti:</strong> URL'deki <code>studentId=${studentId}</code>
+                        değerini değiştirerek (ör. <code>?studentId=${parseInt(studentId) + 1}</code>)
+                        başka öğrencilerin karne bilgilerine erişebilirsiniz.
+                    </div>
+
+                    <div class="footer-warning">
+                        Bu sayfa eğitim amaçlıdır. Gerçek bir e-Okul sistemi değildir.
+                    </div>
+                `;
+
+            } catch (error) {
+                contentDiv.innerHTML = '<div class="error-box">Sunucuya bağlanırken hata oluştu!</div>';
+                console.error(error);
+            }
+        });
+    </script>
+
+</body>
+</html>
