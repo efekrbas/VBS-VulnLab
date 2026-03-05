@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔒 VBS-SecLab
+# 🔒 VBS-VulnLab
 
 ### Vulnerable by Design — A Cybersecurity Education Platform
 
