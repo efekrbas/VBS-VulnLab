@@ -13,8 +13,9 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Statik dosyaları servis et (index.html, style.css, script.js, SVG'ler)
-app.use(express.static(path.join(__dirname)));
+// Statik dosyaları servis et - API route'larından SONRA tanımlanıyor (aşağıda)
+// Express 5'te static middleware route'lardan önce tanımlanırsa
+// API yollarını yakalayıp 404 dönebilir.
 
 // ============================================================
 // Bu kısım zafiyetli bırakılmıştır – rate limiting yok
@@ -527,6 +528,13 @@ app.get("/api/admin/dump", (req, res) => {
         totalNotes: Object.values(studentNotes).reduce((sum, arr) => sum + arr.length, 0)
     });
 });
+
+// ============================================================
+// Statik dosyaları servis et (index.html, style.css, script.js, SVG'ler)
+// Bu middleware API route'larından SONRA tanımlanmalıdır.
+// Express 5'te static middleware önce tanımlanırsa /api/* yollarını yakalayabilir.
+// ============================================================
+app.use(express.static(path.join(__dirname)));
 
 // ============================================================
 // Sunucuyu başlat
