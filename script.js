@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
     // ===================== DYNAMIC QUESTION =====================
     const questions = [
         "Öğrencinin nüfus cüzdanı cilt numarası nedir?",
@@ -456,6 +456,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
     imageContainer.innerHTML = "";
 
+    // =====================================================================
+    // Bu kısım zafiyetli bırakılmıştır – Client-Side Information Disclosure
+    // Doğru resmin hangisi olduğu bilgisi sunucudan alınıp istemcide
+    // birçok yere açıkça yazılmaktadır.
+    // Saldırgan F12 (DevTools) ile bu bilgiye kolayca ulaşabilir.
+    // =====================================================================
+
+    // Sunucudan doğrulama verisini al
+    // ZAFİYET #0: Network sekmesinde /api/verification-data yanıtı görülebilir
+    let correctImageId = 3; // fallback
+    try {
+        const verifyRes = await fetch("/api/verification-data");
+        const verifyData = await verifyRes.json();
+        correctImageId = verifyData.correctImageId;
+    } catch (e) {
+        console.error("Doğrulama verisi alınamadı:", e);
+    }
+    const correctImageIndex = correctImageId - 1;
+
+    // ZAFİYET #1: Doğru cevap global bir JavaScript değişkeninde saklanıyor
+    // F12 > Console sekmesinde "window.__studentVerification" yazarak bulunabilir
+    window.__studentVerification = {
+        dopigruResimId: correctImageId,
+        opigrenciNo: "1234",
+        sepihir: "ANKARA",
+        _pipigipiSecret: true
+    };
+
+    // ZAFİYET #2: Doğru cevap console'a yazdırılıyor (Console sekmesinde görünür)
+    console.log("[DEBUG] Doğrulama bilgisi yüklendi. Doğru resim ID: " + correctImageId);
+    console.log("[DEBUG] Beklenen şehir: ANKARA, Öğrenci No: 1234");
+
     for (let i = 0; i < imageCount; i++) {
         const canvas = document.createElement("canvas");
         canvas.width = 120;
@@ -470,7 +502,25 @@ document.addEventListener("DOMContentLoaded", function () {
         sceneTypes[i % sceneTypes.length](ctx, 120, 120, rng);
 
         const div = document.createElement("div");
-        div.className = "image-option";
+
+        // ZAFİYET #3: Doğru resmin div'ine "correct-student" CSS class'ı ekleniyor
+        // F12 > Elements sekmesinde class adlarına bakarak bulunabilir
+        if (i === correctImageIndex) {
+            div.className = "image-option correct-student";
+        } else {
+            div.className = "image-option";
+        }
+
+        // ZAFİYET #4: Doğru resme data-correct="true" attribute'u ekleniyor
+        // F12 > Elements sekmesinde attribute'lara bakarak bulunabilir
+        div.setAttribute("data-student-id", i + 1);
+        if (i === correctImageIndex) {
+            div.setAttribute("data-correct", "true");
+            div.setAttribute("data-verified", "student-match");
+        } else {
+            div.setAttribute("data-correct", "false");
+        }
+
         div.innerHTML = `
             <input type="radio" name="student-image" id="img${i}" value="${i + 1}">
             <label for="img${i}" style="width:auto; margin:0; color:inherit;">Seç</label>
@@ -482,7 +532,61 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("img" + i).checked = true;
         };
 
+        // ZAFİYET #5: Doğru resmin canvas'ına gizli bir attribute ekleniyor
+        if (i === correctImageIndex) {
+            canvas.setAttribute("data-role", "verified-student-photo");
+        }
+
         div.appendChild(canvas);
         imageContainer.appendChild(div);
+    }
+
+    // ZAFİYET #6: HTML yorumu olarak doğru cevap kaynak kodda bırakılıyor
+    // F12 > Elements sekmesinde HTML yorumu olarak görünür
+    const commentNode = document.createComment(
+        " Doğrulama Bilgisi: Doğru resim ID = " + correctImageId +
+        " | Öğrenci No = 1234 | Şehir = ANKARA "
+    );
+    imageContainer.parentNode.insertBefore(commentNode, imageContainer);
+
+    // ===================== FORM SUBMIT (Backend'e POST) =====================
+    const submitBtn = document.querySelector(".submit-btn");
+    if (submitBtn) {
+        submitBtn.addEventListener("click", async function () {
+            const city = document.getElementById("city-select").value;
+            const studentNo = document.getElementById("dynamic-input").value;
+            const selectedImage = document.querySelector('input[name="student-image"]:checked');
+            const selectedImageId = selectedImage ? selectedImage.value : null;
+
+            if (!city || !studentNo || !selectedImageId) {
+                alert("Lütfen tüm alanları doldurunuz!");
+                return;
+            }
+
+            try {
+                const response = await fetch("/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ city, studentNo, selectedImageId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert("✅ " + data.message);
+                    // Giriş başarılı – dashboard'a yönlendir
+                    if (data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                    }
+                } else {
+                    alert("❌ " + data.message);
+                }
+            } catch (error) {
+                alert("Sunucuya bağlanırken bir hata oluştu!");
+                console.error("Hata:", error);
+            }
+        });
     }
 });
