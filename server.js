@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = 3000;
@@ -36,6 +37,12 @@ const validUsers = [
 // tarafında saklanıyor ama client'a açık açık gönderiliyor
 // ============================================================
 let currentCorrectImageId = null;
+
+// ============================================================
+// Bu kısım zafiyetli bırakılmıştır – Stored XSS
+// Öğretmen notları sanitize edilmeden saklanıyor
+// ============================================================
+const studentNotes = {};
 
 // ============================================================
 // Hayali öğrenci karne verileri
@@ -308,6 +315,218 @@ app.get("/api/student", (req, res) => {
 
 ============================================================
 */
+
+// ============================================================
+// POST /api/notes – Öğretmen notu kaydetme
+//
+// Bu kısım zafiyetli bırakılmıştır – Stored XSS
+// Kullanıcıdan gelen not içeriği herhangi bir sanitize işleminden
+// geçirilmeden kaydediliyor. Saldırgan <script> veya <img onerror>
+// gibi HTML/JS payload'ları göndererek XSS saldırısı yapabilir.
+// ============================================================
+app.post("/api/notes", (req, res) => {
+    const { studentId, note } = req.body;
+
+    if (!studentId || !note) {
+        return res.status(400).json({
+            success: false,
+            message: "Öğrenci ID ve not alanı gereklidir!"
+        });
+    }
+
+    // Bu kısım zafiyetli bırakılmıştır – input sanitize edilmiyor!
+    // Saldırgan note alanına <script>alert('XSS')</script> yazabilir
+    if (!studentNotes[studentId]) {
+        studentNotes[studentId] = [];
+    }
+    studentNotes[studentId].push({
+        text: note, // Zafiyet: sanitize yok!
+        date: new Date().toLocaleString("tr-TR"),
+        author: "Öğretmen"
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Not başarıyla kaydedildi!"
+    });
+});
+
+// ============================================================
+// GET /api/notes – Öğretmen notlarını getirme
+// ============================================================
+app.get("/api/notes", (req, res) => {
+    const studentId = req.query.studentId;
+
+    if (!studentId) {
+        return res.status(400).json({
+            success: false,
+            message: "Öğrenci ID gereklidir!"
+        });
+    }
+
+    // Bu kısım zafiyetli bırakılmıştır – notlar sanitize edilmeden döndürülüyor
+    const notes = studentNotes[studentId] || [];
+    return res.status(200).json({ success: true, notes });
+});
+
+// ============================================================
+// GET /search – Öğrenci arama sayfası
+//
+// ██████████████████████████████████████████████████████████████
+// ██  Bu kısım zafiyetli bırakılmıştır – REFLECTED XSS       ██
+// ██                                                          ██
+// ██  Kullanıcının girdiği arama terimi (q parametresi)       ██
+// ██  herhangi bir sanitize/escape işlemi yapılmadan          ██
+// ██  doğrudan HTML yanıtına yerleştiriliyor.                  ██
+// ██                                                          ██
+// ██  Saldırgan, URL'ye kötü amaçlı JavaScript kodu           ██
+// ██  ekleyerek kurbanın tarayıcısında kod çalıştırabilir.    ██
+// ██████████████████████████████████████████████████████████████
+// ============================================================
+app.get("/search", (req, res) => {
+    const query = req.query.q || "";
+
+    // Bu kısım zafiyetli bırakılmıştır – query doğrudan HTML'e enjekte ediliyor!
+    // Güvenli yöntem: HTML entity encoding (escapeHtml) uygulanmalıdır.
+    const html = `
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Öğrenci Arama - VBS</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; background: #e8ecf1; display: flex; justify-content: center; padding: 30px 10px; }
+            .search-container { width: 100%; max-width: 650px; background: #fff; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.12); overflow: hidden; }
+            .search-header { background: linear-gradient(135deg, #2c3e50, #34495e); color: #fff; padding: 18px 25px; }
+            .search-header h1 { font-size: 18px; }
+            .search-body { padding: 25px; }
+            .search-form { display: flex; gap: 10px; margin-bottom: 20px; }
+            .search-form input { flex: 1; padding: 10px; border: 2px solid #3498db; border-radius: 5px; font-size: 14px; }
+            .search-form button { background: #f39c12; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+            .search-form button:hover { background: #e67e22; }
+            .result-box { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #3498db; }
+            .back-link { display: inline-block; margin-top: 15px; color: #3498db; text-decoration: none; }
+            .vuln-info { margin-top: 20px; background: #fff3cd; padding: 12px; border-radius: 5px; font-size: 12px; color: #856404; }
+        </style>
+    </head>
+    <body>
+        <div class="search-container">
+            <div class="search-header">
+                <h1>🔍 Öğrenci Arama</h1>
+            </div>
+            <div class="search-body">
+                <form class="search-form" method="GET" action="/search">
+                    <input type="text" name="q" placeholder="Öğrenci adı veya numarası..." value="${query}">
+                    <button type="submit">Ara</button>
+                </form>
+                ${query ? `
+                    <div class="result-box">
+                        <strong>Arama sonuçları:</strong> "${query}" için sonuç bulunamadı.
+                    </div>
+                ` : ""}
+                <a href="/" class="back-link">← Ana Sayfaya Dön</a>
+                <div class="vuln-info">
+                    <strong>⚠ Reflected XSS Zafiyeti:</strong> URL'deki <code>q</code> parametresine
+                    <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code> yazarak test edebilirsiniz.
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>`;
+
+    res.send(html);
+});
+
+// ============================================================
+// GET /api/files – Dosya indirme (Belge Simülasyonu)
+//
+// ██████████████████████████████████████████████████████████████
+// ██  Bu kısım zafiyetli bırakılmıştır – PATH TRAVERSAL      ██
+// ██                                                          ██
+// ██  Kullanıcının gönderdiği dosya adı herhangi bir           ██
+// ██  doğrulama veya kısıtlama olmadan path.join() ile        ██
+// ██  birleştiriliyor. Saldırgan "../" kullanarak sunucu      ██
+// ██  dosya sisteminde gezinebilir.                            ██
+// ██                                                          ██
+// ██  Örnek: /api/files?name=../server.js                     ██
+// ██  Bu istek sunucunun kaynak kodunu döndürür!               ██
+// ██████████████████████████████████████████████████████████████
+// ============================================================
+app.get("/api/files", (req, res) => {
+    const fileName = req.query.name;
+
+    if (!fileName) {
+        return res.status(400).json({
+            success: false,
+            message: "Dosya adı gereklidir! Kullanım: /api/files?name=dosya.txt"
+        });
+    }
+
+    // Bu kısım zafiyetli bırakılmıştır – path traversal koruması yok!
+    // Saldırgan ../server.js, ../package.json, ../../etc/passwd gibi
+    // değerler göndererek sunucu dosyalarını okuyabilir.
+    // Güvenli yöntem: path.basename() kullanılmalı ve dosya
+    // izin verilen bir dizinle sınırlandırılmalıdır.
+    const filePath = path.join(__dirname, "documents", fileName);
+
+    try {
+        // Bu kısım zafiyetli bırakılmıştır – dosya yolu doğrulanmıyor!
+        const content = fs.readFileSync(filePath, "utf-8");
+        return res.status(200).json({
+            success: true,
+            fileName: fileName,
+            content: content
+        });
+    } catch (err) {
+        // Bu kısım zafiyetli bırakılmıştır – hata mesajı dosya yolunu sızdırıyor
+        return res.status(404).json({
+            success: false,
+            message: `Dosya bulunamadı: ${filePath}`,
+            error: err.message
+        });
+    }
+});
+
+// ============================================================
+// GET /api/admin/dump – Debug/Admin Data Dump
+//
+// ██████████████████████████████████████████████████████████████
+// ██  Bu kısım zafiyetli bırakılmıştır – SENSITIVE DATA       ██
+// ██  EXPOSURE (Hassas Veri Sızıntısı)                        ██
+// ██                                                          ██
+// ██  Bu endpoint HİÇBİR kimlik doğrulaması yapmadan          ██
+// ██  tüm sistem verilerini (kullanıcılar, öğrenci verileri,  ██
+// ██  sunucu konfigürasyonu) düz metin JSON olarak döndürür.  ██
+// ██                                                          ██
+// ██  Gerçek sistemlerde bu tür endpoint'ler ASLA halka       ██
+// ██  açık olmamalıdır.                                        ██
+// ██████████████████████████████████████████████████████████████
+// ============================================================
+app.get("/api/admin/dump", (req, res) => {
+    // Bu kısım zafiyetli bırakılmıştır – kimlik doğrulaması yok!
+    // Herkes bu endpoint'e erişerek tüm verileri görebilir.
+    return res.status(200).json({
+        _warning: "BU VERİLER GİZLİ OLMALIDIR! Kimlik doğrulaması yapılmadan erişildi.",
+        server: {
+            nodeVersion: process.version,
+            platform: process.platform,
+            uptime: process.uptime(),
+            memoryUsage: process.memoryUsage(),
+            env: {
+                PORT: PORT,
+                NODE_ENV: process.env.NODE_ENV || "development"
+            }
+        },
+        credentials: validUsers,
+        allStudents: studentDatabase,
+        notes: studentNotes,
+        currentCorrectImageId: currentCorrectImageId,
+        totalStudents: Object.keys(studentDatabase).length,
+        totalNotes: Object.values(studentNotes).reduce((sum, arr) => sum + arr.length, 0)
+    });
+});
 
 // ============================================================
 // Sunucuyu başlat

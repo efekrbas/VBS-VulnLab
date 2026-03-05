@@ -1,0 +1,12 @@
+GİZLİ RAPOR - YETKİSİZ ERİŞİM YASAKTIR
+==========================================
+
+Okul Müdürlüğü İç Yazışma
+
+Bu belge yalnızca yetkili personel tarafından görüntülenmelidir.
+
+Öğrenci disiplin kayıtları:
+- Ahmet Yılmaz: Uyarı (2024-01-15)
+- Zeynep Kaya: Kınama (2024-02-20)
+
+Bu dosya path traversal testi için oluşturulmuş örnek bir gizli belgedir.

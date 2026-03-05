@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>e-Okul Karne Bilgileri</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -21,7 +26,7 @@
             max-width: 750px;
             background: #fff;
             border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.12);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.12);
             overflow: hidden;
         }
 
@@ -121,9 +126,20 @@
             font-size: 13px;
         }
 
-        .grade-high { background: #d4edda; color: #155724; }
-        .grade-mid { background: #fff3cd; color: #856404; }
-        .grade-low { background: #f8d7da; color: #721c24; }
+        .grade-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .grade-mid {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .grade-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
 
         .average-row {
             background: #2c3e50 !important;
@@ -175,12 +191,93 @@
             font-family: 'Consolas', monospace;
         }
 
+        .notes-section {
+            padding: 20px 25px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .notes-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .note-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .note-form textarea {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .note-form button {
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            align-self: flex-end;
+        }
+
+        .note-form button:hover {
+            background: #219a52;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .note-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .note-meta {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .xss-warning {
+            margin-top: 15px;
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #856404;
+        }
+
         @media (max-width: 500px) {
-            .student-info { grid-template-columns: 1fr; }
-            .dash-header h1 { font-size: 15px; }
+            .student-info {
+                grid-template-columns: 1fr;
+            }
+
+            .dash-header h1 {
+                font-size: 15px;
+            }
+
+            .note-form {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div class="dashboard-container">
@@ -278,9 +375,25 @@
                         </tbody>
                     </table>
 
+                    <div class="notes-section">
+                        <h3>📝 Öğretmen Notları</h3>
+                        <div class="note-form">
+                            <textarea id="note-input" placeholder="Öğrenci hakkında not yazın..."></textarea>
+                            <button id="note-submit">Gönder</button>
+                        </div>
+                        <div class="notes-list" id="notes-list">
+                            <!-- Notlar buraya yüklenecek -->
+                        </div>
+                        <div class="xss-warning">
+                            <strong>⚠ Stored XSS Zafiyeti:</strong> Not alanına
+                            <code>&lt;img src=x onerror=alert('XSS')&gt;</code> yazarak test edebilirsiniz.
+                            Notlar sanitize edilmeden kaydedilip gösterilmektedir.
+                        </div>
+                    </div>
+
                     <div class="vulnerability-demo">
-                        <strong>⚠ IDOR Zafiyeti:</strong> URL'deki <code>studentId=${studentId}</code>
-                        değerini değiştirerek (ör. <code>?studentId=${parseInt(studentId) + 1}</code>)
+                        <strong>⚠ IDOR Zafiyeti:</strong> URL'deki <code>studentId=\${studentId}</code>
+                        değerini değiştirerek (ör. <code>?studentId=\${parseInt(studentId) + 1}</code>)
                         başka öğrencilerin karne bilgilerine erişebilirsiniz.
                     </div>
 
@@ -289,12 +402,64 @@
                     </div>
                 `;
 
+                // Notları yükle
+                loadNotes(studentId);
+
+                // Not gönderme
+                document.getElementById("note-submit").addEventListener("click", async () => {
+                    const noteInput = document.getElementById("note-input");
+                    const noteText = noteInput.value.trim();
+                    if (!noteText) return;
+
+                    try {
+                        const noteRes = await fetch("/api/notes", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ studentId: studentId, note: noteText })
+                        });
+                        const noteData = await noteRes.json();
+                        if (noteData.success) {
+                            noteInput.value = "";
+                            loadNotes(studentId);
+                        }
+                    } catch (err) {
+                        console.error("Not gönderilemedi:", err);
+                    }
+                });
+
             } catch (error) {
                 contentDiv.innerHTML = '<div class="error-box">Sunucuya bağlanırken hata oluştu!</div>';
                 console.error(error);
             }
         });
+
+        // Bu kısım zafiyetli bırakılmıştır – Stored XSS
+        // Notlar innerHTML ile DOM'a enjekte ediliyor, sanitize edilmiyor!
+        async function loadNotes(studentId) {
+            const notesList = document.getElementById("notes-list");
+            if (!notesList) return;
+
+            try {
+                const res = await fetch(`/api/notes?studentId=${studentId}`);
+                const data = await res.json();
+
+                if (data.success && data.notes.length > 0) {
+                    // ZAFİYET: innerHTML kullanılıyor – XSS payload'ları çalışacak!
+                    notesList.innerHTML = data.notes.map(n => `
+                        <div class="note-item">
+                            <div class="note-text">${n.text}</div>
+                            <div class="note-meta">${n.author} — ${n.date}</div>
+                        </div>
+                    `).join("");
+                } else {
+                    notesList.innerHTML = '<div style="color:#888; font-size:13px;">Henüz not eklenmemiş.</div>';
+                }
+            } catch (err) {
+                console.error("Notlar yüklenemedi:", err);
+            }
+        }
     </script>
 
 </body>
+
 </html>

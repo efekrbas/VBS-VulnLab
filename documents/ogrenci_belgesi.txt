@@ -1,0 +1,8 @@
+Bu dosya path traversal zafiyetini test etmek için oluşturulmuştur.
+
+Öğrenci Belgeleri:
+- Karne raporu
+- Devamsızlık belgesi
+- Öğrenci belgesi
+
+Bu bir örnek belge dosyasıdır.

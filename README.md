@@ -154,6 +154,112 @@ Additional measures:
 
 ---
 
+### 4. Stored XSS (Cross-Site Scripting)
+
+| Category | Detail |
+|----------|--------|
+| **OWASP** | A03:2021 – Injection |
+| **Location** | `POST /api/notes`, `GET /api/notes`, `dashboard.html` |
+| **Description** | The teacher notes feature allows users to submit notes for students. Notes are stored and rendered using `innerHTML` without any sanitization, allowing malicious HTML/JavaScript to execute. |
+| **Impact** | Session hijacking, cookie theft, keylogging, page defacement |
+| **Exploit** | Run `python xss_exploit.py` or type `<img src=x onerror=alert('XSS')>` in the notes field |
+
+**Remediation (Best Practices):**
+
+```javascript
+// ✅ Secure: Sanitize input before storing and use textContent instead of innerHTML
+const sanitizeHtml = require('sanitize-html');
+
+app.post('/api/notes', (req, res) => {
+    const cleanNote = sanitizeHtml(req.body.note, {
+        allowedTags: [],     // No HTML allowed
+        allowedAttributes: {}
+    });
+    // Store cleanNote instead of raw input
+});
+
+// Client-side: Use textContent instead of innerHTML
+noteDiv.textContent = note.text;
+```
+
+---
+
+### 5. Reflected XSS
+
+| Category | Detail |
+|----------|--------|
+| **OWASP** | A03:2021 – Injection |
+| **Location** | `GET /search?q=X` |
+| **Description** | The search endpoint reflects the user's query directly into the HTML response without encoding. An attacker can craft a malicious URL that executes JavaScript in the victim's browser. |
+| **Impact** | Phishing, session theft, malicious redirects |
+| **Exploit** | Visit `http://localhost:3000/search?q=<script>alert('XSS')</script>` |
+
+**Remediation (Best Practices):**
+
+```javascript
+// ✅ Secure: Escape HTML entities before rendering
+function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const safeQuery = escapeHtml(req.query.q);
+```
+
+---
+
+### 6. Path Traversal (Directory Traversal)
+
+| Category | Detail |
+|----------|--------|
+| **OWASP** | A01:2021 – Broken Access Control |
+| **Location** | `GET /api/files?name=X` |
+| **Description** | The file download endpoint joins user input directly with `path.join()` without validating or sanitizing the filename. An attacker can use `../` sequences to traverse the directory tree and read arbitrary server files. |
+| **Impact** | Source code disclosure, configuration file exposure, credential leakage |
+| **Exploit** | Run `python path_traversal_exploit.py` or visit `http://localhost:3000/api/files?name=../server.js` |
+
+**Remediation (Best Practices):**
+
+```javascript
+// ✅ Secure: Use path.basename() and validate against allowed directory
+const safeName = path.basename(req.query.name); // Strips ../
+const filePath = path.join(__dirname, 'documents', safeName);
+
+// Also verify the resolved path is within the allowed directory
+const resolvedPath = path.resolve(filePath);
+const allowedDir = path.resolve(path.join(__dirname, 'documents'));
+if (!resolvedPath.startsWith(allowedDir)) {
+    return res.status(403).json({ error: 'Access denied' });
+}
+```
+
+---
+
+### 7. Sensitive Data Exposure
+
+| Category | Detail |
+|----------|--------|
+| **OWASP** | A02:2021 – Cryptographic Failures |
+| **Location** | `GET /api/admin/dump` |
+| **Description** | An admin/debug endpoint exposes all system data (credentials, student records, server configuration, memory usage) as a JSON response with **no authentication** required. |
+| **Impact** | Full database dump, credential exposure, server configuration leakage |
+| **Exploit** | Visit `http://localhost:3000/api/admin/dump` in any browser |
+
+**Remediation (Best Practices):**
+
+```javascript
+// ✅ Secure: Remove debug endpoints or protect with authentication
+// Option 1: Remove entirely in production
+if (process.env.NODE_ENV !== 'development') {
+    // Don't register the route at all
+}
+
+// Option 2: Require authentication
+app.get('/api/admin/dump', requireAdmin, (req, res) => { /* ... */ });
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -177,11 +283,17 @@ npm start
 
 Then open **http://localhost:3000** in your browser.
 
-### Running the Exploit
+### Running the Exploits
 
 ```bash
 # Brute-force attack (requires server running)
 python brute_force.py
+
+# Stored XSS exploit
+python xss_exploit.py
+
+# Path traversal exploit
+python path_traversal_exploit.py
 ```
 
 ### Test Credentials
@@ -196,14 +308,19 @@ python brute_force.py
 
 ```
 VBS-VulnLab/
-├── server.js           # Express backend with vulnerable endpoints
-├── index.html          # Login page (VBS verification form)
-├── dashboard.html      # Student report card (IDOR target)
-├── script.js           # Client-side logic (info disclosure vectors)
-├── style.css           # Responsive styling
-├── brute_force.py      # Brute-force exploit script
-├── package.json        # Node.js dependencies
-└── README.md           # This file
+├── server.js                  # Express backend with vulnerable endpoints
+├── index.html                 # Login page (VBS verification form)
+├── dashboard.html             # Student report card (IDOR + Stored XSS)
+├── script.js                  # Client-side logic (info disclosure vectors)
+├── style.css                  # Responsive styling
+├── documents/                 # Sample documents (path traversal target)
+│   ├── ogrenci_belgesi.txt    # Student document
+│   └── gizli_rapor.txt        # Confidential report
+├── brute_force.py             # Brute-force exploit script
+├── xss_exploit.py             # Stored XSS exploit script
+├── path_traversal_exploit.py  # Path traversal exploit script
+├── package.json               # Node.js dependencies
+└── README.md                  # This file
 ```
 
 ## 🧪 Lab Exercises
@@ -212,9 +329,13 @@ VBS-VulnLab/
 |----------|-----------|------|
 | 🟢 Find the correct image via F12 | Easy | Inspect DOM/Console to find `data-correct="true"` |
 | 🟢 Read the API response in Network tab | Easy | Observe `/api/verification-data` response |
+| 🟢 Access admin dump endpoint | Easy | Visit `/api/admin/dump` to see all data |
 | 🟡 Brute-force the student number | Medium | Run `brute_force.py` or craft your own script |
 | 🟡 Access another student's grades (IDOR) | Medium | Change `studentId` in URL after login |
-| 🔴 Chain all vulnerabilities | Hard | Use info disclosure → brute-force → IDOR sequentially |
+| 🟡 Inject XSS via teacher notes | Medium | Type `<img src=x onerror=alert('XSS')>` in notes |
+| 🟡 Read server source code (Path Traversal) | Medium | Visit `/api/files?name=../server.js` |
+| 🔴 Reflected XSS via search | Hard | Craft malicious URL with `/search?q=<script>...` |
+| 🔴 Chain all 7 vulnerabilities | Hard | Use all exploits sequentially to full compromise |
 
 ## ⚖️ Legal & Ethical Notice
 
@@ -267,6 +388,30 @@ VBS-VulnLab/
 - **Açıklama:** Doğru resim cevabı F12 DevTools ile 7 farklı yoldan keşfedilebilir.
 - **Exploit:** F12 > Console/Elements/Network sekmelerini inceleyin.
 - **Çözüm:** Doğrulama mantığını sunucu tarafında tutun, debug loglarını kaldırın, CSP uygulayın.
+
+### 4. Stored XSS (Depolanmış Betik Enjeksiyonu)
+- **Konum:** `POST /api/notes`, `dashboard.html`
+- **Açıklama:** Öğretmen notları sanitize edilmeden kaydediliyor ve `innerHTML` ile gösteriliyor.
+- **Exploit:** Not alanına `<img src=x onerror=alert('XSS')>` yazın veya `python xss_exploit.py` çalıştırın.
+- **Çözüm:** Input sanitization, `textContent` kullanımı, Content Security Policy.
+
+### 5. Reflected XSS (Yansıtılmış Betik Enjeksiyonu)
+- **Konum:** `GET /search?q=X`
+- **Açıklama:** Arama parametresi HTML'e doğrudan enjekte ediliyor, encoding yapılmıyor.
+- **Exploit:** `http://localhost:3000/search?q=<script>alert('XSS')</script>` adresini ziyaret edin.
+- **Çözüm:** HTML entity encoding, template engine kullanımı.
+
+### 6. Path Traversal (Dizin Gezinme)
+- **Konum:** `GET /api/files?name=X`
+- **Açıklama:** Dosya adı doğrulanmadan `path.join()` ile birleştiriliyor, `../` ile dosya sistemi gezinebilir.
+- **Exploit:** `http://localhost:3000/api/files?name=../server.js` veya `python path_traversal_exploit.py` çalıştırın.
+- **Çözüm:** `path.basename()` kullanımı, izin verilen dizin kontrolü.
+
+### 7. Hassas Veri Sızıntısı (Sensitive Data Exposure)
+- **Konum:** `GET /api/admin/dump`
+- **Açıklama:** Admin/debug endpoint'i kimlik doğrulaması olmadan tüm verileri döndürüyor.
+- **Exploit:** `http://localhost:3000/api/admin/dump` adresini ziyaret edin.
+- **Çözüm:** Debug endpoint'lerini production'da kaldırın, kimlik doğrulaması ekleyin.
 
 ## 🚀 Hızlı Başlangıç
 
