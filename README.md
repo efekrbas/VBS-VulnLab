@@ -165,7 +165,7 @@ Additional measures:
 
 ```bash
 # Clone the repository
-git clone https://github.com/efekrbas/e-okul-eski-dogrulama-sayfasi.git
+git clone https://github.com/efekrbas/VBS-VulnLab.git
 cd e-okul-eski-dogrulama-sayfasi
 
 # Install dependencies
@@ -271,7 +271,7 @@ VBS-SecLab/
 ## 🚀 Hızlı Başlangıç
 
 ```bash
-git clone https://github.com/efekrbas/e-okul-eski-dogrulama-sayfasi.git
+git clone https://github.com/efekrbas/VBS-VulnLab.git
 cd e-okul-eski-dogrulama-sayfasi
 npm install
 npm start
