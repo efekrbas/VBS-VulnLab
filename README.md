@@ -243,7 +243,7 @@ VBS-VulnLab/
 
 ## 📖 Genel Bakış
 
-**VBS-SecLab**, Türkiye'deki eski **e-Okul VBS (Veli Bilgilendirme Sistemi)** doğrulama arayüzünü temel alan, **kasıtlı olarak zafiyetli** bırakılmış bir web uygulamasıdır. Siber güvenlik öğrencilerinin yaygın web güvenlik açıklarını güvenli bir ortamda keşfetmesi, sömürmesi ve anlaması için tasarlanmıştır.
+**VBS-VulnLab**, Türkiye'deki eski **e-Okul VBS (Veli Bilgilendirme Sistemi)** doğrulama arayüzünü temel alan, **kasıtlı olarak zafiyetli** bırakılmış bir web uygulamasıdır. Siber güvenlik öğrencilerinin yaygın web güvenlik açıklarını güvenli bir ortamda keşfetmesi, sömürmesi ve anlaması için tasarlanmıştır.
 
 > [!CAUTION]
 > Bu uygulama **kasıtlı güvenlik açıkları** içermektedir. Yalnızca **eğitim ve araştırma amaçlıdır**. Gerçek sistemlerde veya halka açık sunucularda asla kullanmayın.
