@@ -20,7 +20,7 @@
 
 ## 📖 Overview
 
-**VBS-SecLab** is an intentionally vulnerable web application modeled after Turkey's legacy **e-Okul VBS (Veli Bilgilendirme Sistemi)** student verification interface. It is designed as a hands-on cybersecurity training lab where students can discover, exploit, and understand common web vulnerabilities in a safe, controlled environment.
+**VBS-VulnLab** is an intentionally vulnerable web application modeled after Turkey's legacy **e-Okul VBS (Veli Bilgilendirme Sistemi)** student verification interface. It is designed as a hands-on cybersecurity training lab where students can discover, exploit, and understand common web vulnerabilities in a safe, controlled environment.
 
 > [!CAUTION]
 > This application contains **intentional security vulnerabilities**. It is built strictly for **educational and research purposes**. Never deploy this on a public server or use it against real systems.
@@ -195,7 +195,7 @@ python brute_force.py
 ## 📁 Project Structure
 
 ```
-VBS-SecLab/
+VBS-VulnLab/
 ├── server.js           # Express backend with vulnerable endpoints
 ├── index.html          # Login page (VBS verification form)
 ├── dashboard.html      # Student report card (IDOR target)
