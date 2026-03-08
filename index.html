@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VBS Güvenlik Kontrol</title>
+    <link rel="icon" type="image/jpeg" href="images/images.jpg">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div class="main-container">
@@ -19,19 +22,16 @@
 
             <form id="verification-form">
                 <div class="form-row">
-                    <label for="city-select"><span class="required">*</span> Öğrencinin nüfusa kayıtlı olduğu il hangisidir?</label>
-                    <select id="city-select">
-                        <option value="">Seçiniz...</option>
-                        <option value="ADANA">ADANA</option>
-                        <option value="ANKARA" selected>ANKARA</option>
-                        <option value="ISTANBUL">İSTANBUL</option>
-                        <option value="IZMIR">İZMİR</option>
-                        <option value="BURSA">BURSA</option>
-                    </select>
+                    <label for="city-select"><span class="required">*</span> Öğrencinin nüfusa kayıtlı olduğu il
+                        hangisidir?</label>
+                    <input type="text" id="city-select" list="city-list" placeholder="İl adını yazın veya seçin..."
+                        autocomplete="off">
+                    <datalist id="city-list"></datalist>
                 </div>
 
                 <div class="form-row">
-                    <label for="dynamic-input" id="dynamic-label"><span class="required">*</span> Öğrencinin nüfus cüzdanı cilt numarası nedir?</label>
+                    <label for="dynamic-input" id="dynamic-label"><span class="required">*</span> Öğrencinin nüfus
+                        cüzdanı cilt numarası nedir?</label>
                     <input type="text" id="dynamic-input">
                 </div>
 
@@ -49,4 +49,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
