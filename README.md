@@ -265,6 +265,26 @@ app.get('/api/admin/dump', requireAdmin, (req, res) => { /* ... */ });
 
 ---
 
+### 8. Image Verification Bypass (Broken Logic)
+
+| Category | Detail |
+|----------|--------|
+| **OWASP** | A01:2021 – Broken Access Control |
+| **Location** | `POST /login` |
+| **Description** | The server checks the text credentials but completely skips validating if the correct image was selected. The check is hardcoded to `const imageCorrect = true;`, rendering the entire image challenge useless. |
+| **Impact** | The visual verification step is completely bypassed. |
+| **Exploit** | Enter the correct student number and city, but select the wrong student photo. The login succeeds anyway. |
+
+**Remediation (Best Practices):**
+
+```javascript
+// ✅ Secure: The backend MUST strictly validate the user's action against the expected answer.
+const imageCorrect = currentCorrectImageId && selectedImageId === String(currentCorrectImageId);
+if (!imageCorrect) return res.status(401).json({ error: "Invalid selection" });
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -341,6 +361,7 @@ VBS-VulnLab/
 | 🟡 Access another student's grades (IDOR) | Medium | Change `studentId` in URL after login |
 | 🟡 Inject XSS via teacher notes | Medium | Type `<img src=x onerror=alert('XSS')>` in notes |
 | 🟡 Read server source code (Path Traversal) | Medium | Visit `/api/files?name=../server.js` |
+| 🟡 Bypass Image Verification | Medium | Enter correct text info but select the wrong image |
 | 🔴 Reflected XSS via search | Hard | Craft malicious URL with `/search?q=<script>...` |
 | 🔴 Chain all 7 vulnerabilities | Hard | Use all exploits sequentially to full compromise |
 
@@ -419,6 +440,12 @@ VBS-VulnLab/
 - **Açıklama:** Admin/debug endpoint'i kimlik doğrulaması olmadan tüm verileri döndürüyor.
 - **Exploit:** `http://localhost:3000/api/admin/dump` adresini ziyaret edin.
 - **Çözüm:** Debug endpoint'lerini production'da kaldırın, kimlik doğrulaması ekleyin.
+
+### 8. Resim Doğrulama Atlatma (Bypass)
+- **Konum:** `POST /login`
+- **Açıklama:** Sunucu, kullanıcının doğru resmi seçip seçmediğini kontrol etmez. Metin bilgileri (Soru cevabı ve İl) doğruysa, testteki yanlış resim seçilse bile backend tarafındaki `imageCorrect = true` mantığı yüzünden sisteme giriş yapılır.
+- **Exploit:** Doğru il ve numara bilgilerini girip bilerek yanlış (alakasız) bir öğrencinin fotoğrafını seçerek "Tamam" deyin.
+- **Çözüm:** Backend tarafındaki bypass edilme işlemini kaldırıp frontend'ten gelen resim sırasını (`selectedImageId`) mevcut oturumda beklenen resim sırasıyla katı biçimde doğrulayın.
 
 ## 🚀 Hızlı Başlangıç
 
