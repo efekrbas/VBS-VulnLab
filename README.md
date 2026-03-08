@@ -14,6 +14,11 @@
 
 <img src="https://img.shields.io/badge/⚠️-DO%20NOT%20USE%20IN%20PRODUCTION-FF0000?style=for-the-badge" alt="Warning" />
 
+<br/>
+<br/>
+
+<img src="images/screenshot.png" alt="VBS-VulnLab Screenshot" width="800">
+
 </div>
 
 ---
