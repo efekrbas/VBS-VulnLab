@@ -285,12 +285,14 @@ Then open **http://localhost:3000** in your browser.
 
 ### Running the Exploits
 
-```bash
 # Brute-force attack (requires server running)
 python brute_force.py
 
 # Stored XSS exploit
 python xss_exploit.py
+
+# Stored XSS cleanup / database reset
+python xss_clear.py
 
 # Path traversal exploit
 python path_traversal_exploit.py

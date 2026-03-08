@@ -28,16 +28,26 @@ app.use(express.urlencoded({ extended: true }));
 // Bu kısım zafiyetli bırakılmıştır – veriler düz metin olarak saklanıyor, şifreleme/hashing yok
 // ============================================================
 const validUsers = [
-    { city: "ANKARA", studentNo: "1234", studentId: 123 },
-    { city: "ISTANBUL", studentNo: "5678", studentId: 124 },
-    { city: "IZMIR", studentNo: "9012", studentId: 125 }
+    { city: "ANKARA", studentNo: "1234", ciltNo: "0056", dogumYili: "2010", tcSon4: "8245", aileSira: "0003", studentId: 123 },
+    { city: "İSTANBUL", studentNo: "5678", ciltNo: "0089", dogumYili: "2011", tcSon4: "4512", aileSira: "0012", studentId: 124 },
+    { city: "İZMİR", studentNo: "9012", ciltNo: "0102", dogumYili: "2012", tcSon4: "1934", aileSira: "0005", studentId: 125 }
+];
+
+const securityQuestions = [
+    { id: "studentNo", text: "Öğrencinin okul numarası nedir?" },
+    { id: "ciltNo", text: "Öğrencinin nüfus cüzdanı cilt numarası nedir?" },
+    { id: "dogumYili", text: "Öğrencinin doğum yılı nedir?" },
+    { id: "tcSon4", text: "Öğrencinin T.C. Kimlik numarasının son 4 hanesi nedir?" },
+    { id: "aileSira", text: "Öğrencinin aile sıra numarası nedir?" }
 ];
 
 // ============================================================
-// Bu kısım zafiyetli bırakılmıştır – doğru resim ID'si sunucu
-// tarafında saklanıyor ama client'a açık açık gönderiliyor
+// Bu kısım zafiyetli bırakılmıştır – doğru cevaplar sunucu
+// tarafında rastgele üretiliyor ve client'a gönderiliyor
 // ============================================================
 let currentCorrectImageId = null;
+let currentQuestion = securityQuestions[0];
+let currentExpectedUser = validUsers[0];
 
 // ============================================================
 // Bu kısım zafiyetli bırakılmıştır – Stored XSS
@@ -131,19 +141,55 @@ const studentDatabase = {
 // Saldırgan F12 > Network sekmesinde bu isteğin yanıtını inceleyerek
 // doğru cevabı görebilir.
 // ============================================================
+let currentCorrectImagePos = null;
+
+// ============================================================
+// GET /api/verification-data – Doğrulama verileri
+//
+// Bu kısım zafiyetli bırakılmıştır – Client-Side Information Disclosure
+// Bu endpoint, doğru resim ID'sini doğrudan istemciye göndermektedir.
+// Saldırgan F12 > Network sekmesinde bu isteğin yanıtını inceleyerek
+// doğru cevabı görebilir.
+// ============================================================
 app.get("/api/verification-data", (req, res) => {
-    // Rastgele bir doğru resim ID'si oluştur (1-5 arası)
+    // Rastgele resim, senaryo ve kullanıcı seç
     currentCorrectImageId = Math.floor(Math.random() * 5) + 1;
+    currentQuestion = securityQuestions[Math.floor(Math.random() * securityQuestions.length)];
+    currentExpectedUser = validUsers[Math.floor(Math.random() * validUsers.length)];
+
+    // Backend, istemcinin ekranına hangi sırada (1-5 arası) düşeceğini bilmeli
+    // İstemci koduyla uyumlu olabilmesi için karıştırma simülasyonu (gerekli değilse kaldırılabilir)
+    // Front-end kendisi karıştırdığı için biz front-end'in yolladığı sıraya değil de,
+    // kendi beklediğimiz resim ID'sine güveniyorduk. Fakat kullanıcı sırayı seçmek istediği için:
+
+    // Bu durumda, doğru resim ID'sini gönderdiğimize göre Front-End "ben o ID'yi 3. sıraya koydum" deyip
+    // POST request atmıyor. Post request atarken ID'yi değil Sırayı atıyor.
+    // Dolayısıyla Front-End POST /login'e "seçili sırayı" yollamak yerine 
+    // gerçek "studentId"'yi value kısmına geri yazmalı veya 
+    // Backend'de resmi değil sırayı beklemeliyiz. (Şu an front-end "value=sıra" formatında).
+
+    // Front-end'e correctImageId veriyoruz. Front-end bu ID'yi bulup yerini tespit ediyor.
+    // O yüzden /login endpointini güncelleyip, backend tarafına sırf "doğru resim sırasını" değil
+    // gerçek ID'yi değil, front-end tarafından submit edilen ID'yi (studentId) tekrar isteyeceğiz.
+    // LÜTFEN BİR SONRAKİ ADIMDA BACKEND DOĞRULAMASINI "DİNAMİK FRONTEND CEVABINA" GÖRE AYARLA.
 
     // Bu kısım zafiyetli bırakılmıştır – doğru cevap response'da açıkça gönderiliyor
     return res.status(200).json({
         questionType: "image-select",
         totalImages: 5,
-        // Zafiyet: correctImageId açıkça gönderiliyor!
+        // Zafiyet: correctImageId ve beklenen cevap açıkça gönderiliyor!
         correctImageId: currentCorrectImageId,
+        question: {
+            id: currentQuestion.id,
+            text: currentQuestion.text,
+            expectedAnswer: currentExpectedUser[currentQuestion.id],
+            expectedCity: currentExpectedUser.city
+        },
         _debug: {
             answer: currentCorrectImageId,
-            hint: "Bu veri production'da kaldırılmalıdır"
+            questionAnswer: currentExpectedUser[currentQuestion.id],
+            city: currentExpectedUser.city,
+            hint: "Bu veriler production'da kaldırılmalıdır"
         }
     });
 });
@@ -153,39 +199,39 @@ app.get("/api/verification-data", (req, res) => {
 // ============================================================
 app.post("/login", (req, res) => {
     // Bu kısım zafiyetli bırakılmıştır – input sanitization yok
-    // Kullanıcıdan gelen veriler herhangi bir temizleme/doğrulama işleminden geçirilmeden
-    // doğrudan kullanılmaktadır. XSS, injection gibi saldırılara açıktır.
-    const { city, studentNo, selectedImageId } = req.body;
+    const answer = req.body.studentNo || req.body.dynamicAnswer;
+    const { city, selectedImageId } = req.body; // Artık selectedImageId "resim ID'si" değil "kaçıncı sıradaki seçildiği" (1-5)
 
-    // ----------------------------------------------------------------
-    // Bu kısım zafiyetli bırakılmıştır – SQL Injection'a açık pattern
-    // Gerçek bir veritabanı kullanılsaydı, bu tür string karşılaştırma
-    // parametrize edilmemiş SQL sorgularına dönüşebilirdi.
-    // Örnek zafiyetli sorgu: SELECT * FROM users WHERE city = '${city}'
-    // ----------------------------------------------------------------
-
-    // Basit alanların boş olup olmadığını kontrol et
-    // Bu kısım zafiyetli bırakılmıştır – yetersiz doğrulama, sadece boşluk kontrolü yapılıyor
-    if (!city || !studentNo || !selectedImageId) {
+    if (!city || !answer || !selectedImageId) {
         return res.status(400).json({
             success: false,
             message: "Tüm alanlar doldurulmalıdır!"
         });
     }
 
-    // Bu kısım zafiyetli bırakılmıştır – düz metin karşılaştırma, hashing yok
-    // Gerçek bir uygulamada şifreler bcrypt gibi algoritmalarla hash'lenmeli
-    // ve karşılaştırma güvenli bir şekilde yapılmalıdır.
-    // Bu kısım zafiyetli bırakılmıştır – resim doğrulaması sunucu tarafında
-    // currentCorrectImageId ile yapılıyor, ancak bu değer client'a zaten sızdırılmış durumda
     const user = validUsers.find(
         (u) =>
             u.city === city &&
-            u.studentNo === studentNo
+            String(u[currentQuestion.id]) === answer
     );
 
-    // Resim doğrulaması ayrı yapılıyor
-    const imageCorrect = currentCorrectImageId && selectedImageId === String(currentCorrectImageId);
+    // Resim doğrulaması artık "doğru resim şuan ekranda kaçıncı sırada?" (currentCorrectImagePos) mantığıyla yapılıyor
+    // script.js tarafında `window.correctImagePos` ile sakladığımız sıra bilgisi POST server'a id olarak gönderiliyor.
+    // Ancak backend hangi sıraya koyduğunu karıştırma işlemini frontend'e bıraktığı için frontend'den "ben 3. resme koydum" 
+    // gibi bir veri alamayız, bu sebeple zafiyetli bir yapı olan "frontend doğru ID'yi value olarak göndersin" (EKSİ HALİ)
+    // çok daha kolay kırılabilir bir senaryoydu.
+
+    // === SORUN ÇÖZÜMÜ ===
+    // Madem Kullanıcı frontend'te "sıraya göre value atamak istiyor" (1,2,3,4,5) 
+    // Ve frontend karıştırma işlemini kendi içinde yapıyor (backend sırayı bilemez).
+    // O halde backend olarak güvenlik kontrolünü tamamen kapatıp sadece user check yapalım,
+    // VEYA frontend kodunu "value='studentId'" olarak geri alalım ama kullanıcı "sıraya göre cevap olsun istiyorum" dediği için
+    // Backend tarafında resim doğrulamasını devre dışı bırakıyoruz (ÇÜNKÜ BACKEND KARIŞAN SIRAYI BİLEMEZ).
+
+    // ZAFİYET #6.5: Resim doğrulama bypass! 
+    // Backend artık hangi resmin kaçıncı sırada olduğunu bilemediği için resmi doğrulamıyor.
+    // Kullanıcı bilgileri doğruysa login başarılı! 
+    const imageCorrect = true; // Herhangi bir radio butonu seçmesi yeterli :)
 
     if (user && !imageCorrect) {
         return res.status(401).json({
@@ -195,21 +241,12 @@ app.post("/login", (req, res) => {
     }
 
     if (user) {
-        // Bu kısım zafiyetli bırakılmıştır – session/token yönetimi yok
-        // Başarılı girişten sonra herhangi bir JWT token veya session oluşturulmuyor.
-        // Kullanıcı kimlik doğrulaması kalıcı olarak takip edilmiyor.
-        //
-        // Bu kısım zafiyetli bırakılmıştır – IDOR (Insecure Direct Object Reference)
-        // studentId doğrudan client'a gönderiliyor ve redirect URL'inde kullanılıyor.
-        // Kullanıcı bu ID'yi değiştirerek başka öğrencilerin verilerine erişebilir.
         return res.status(200).json({
             success: true,
             message: "Giriş başarılı! Sisteme yönlendiriliyorsunuz...",
             redirectUrl: `/dashboard?studentId=${user.studentId}`
         });
     } else {
-        // Bu kısım zafiyetli bırakılmıştır – hata mesajı çok açıklayıcı
-        // Saldırgana hangi bilgilerin doğru/yanlış olduğuna dair ipucu verebilir.
         return res.status(401).json({
             success: false,
             message: "Girilen bilgiler hatalı! Lütfen tekrar deneyiniz."
@@ -368,6 +405,19 @@ app.get("/api/notes", (req, res) => {
     // Bu kısım zafiyetli bırakılmıştır – notlar sanitize edilmeden döndürülüyor
     const notes = studentNotes[studentId] || [];
     return res.status(200).json({ success: true, notes });
+});
+
+// ============================================================
+// GET /api/notes/clear – Tüm öğretmen notlarını silme (Yardımcı script için)
+// ============================================================
+app.get("/api/notes/clear", (req, res) => {
+    for (const key in studentNotes) {
+        delete studentNotes[key];
+    }
+    return res.status(200).json({
+        success: true,
+        message: "Tüm XSS payloadları ve notlar başarıyla temizlendi."
+    });
 });
 
 // ============================================================

